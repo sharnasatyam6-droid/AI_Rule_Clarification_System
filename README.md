@@ -1,70 +1,63 @@
-# Rulebook — AI Policy Hub
+# Rulebook — AI Rules Clarity Checker
 
-Rulebook is a Vercel-friendly web application for students to discover clear, searchable course policies on AI use. The shared administrator workspace lets trusted staff search for a teacher, add a teacher profile, and create, publish, edit, or delete policies under that teacher's name. The original individual teacher sign-in remains available.
+**Team:** Nexora · **Project:** AI Synergy, IIIT Gwalior
+
+Rulebook is a policy directory and evidence-grounded AI-use policy checker.
+
+## Technology stack
+- Frontend: plain HTML, CSS, and vanilla JavaScript
+- Backend: Python 3.11+ with FastAPI
+- Database: PostgreSQL on Neon, using psycopg 3
+- Hosting: Vercel Python Function at `api/index.py` (verify runtime support during deployment)
+- Source control: GitHub
 
 ## Features
+- Search and browse published policies.
+- Five built-in scenarios and a custom situation field.
+- Three results: **Allowed by the provided policy**, **Not allowed by the provided policy**, or **Unclear — Ask the Instructor**.
+- Supporting excerpt, source policy, conditions, and safety disclaimer.
+- Shared admin login, teacher search, add-teacher workflow, and create/edit/publish/delete policy management.
+- Draft and published policy states.
+- Responsive frontend; server-side validation and signed HttpOnly admin cookie.
+- Sample policy text is labelled **DEMONSTRATION ONLY — not an official course rule**.
 
-- Public directory of published policies with teacher/title/subject search.
-- Filters for subject and AI permission category.
-- Policy detail pages with summaries, conditions, and update dates.
-- Shared admin sign-in using server-only environment variables and a signed, HTTP-only session cookie.
-- Searchable teacher directory and an Add Teacher workflow (searches records already entered; it is not connected to an external college directory).
-- Teacher selection before policy editing, with draft/published states.
-- Original managed Neon Auth sign-in for individual faculty.
-- Server-side authorization for all policy and teacher-management mutations.
-- PostgreSQL constraints and indexes, draft/published states, and demonstration seed data.
-- Responsive editorial-style UI and baseline security headers.
-- GitHub Actions checks for TypeScript, lint, and production build.
+## Run locally
+1. Install Python 3.11+.
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   # Windows PowerShell
+   .venv\Scripts\Activate.ps1
+   # macOS/Linux
+   source .venv/bin/activate
+   ```
+3. Install dependencies: `pip install -r requirements.txt`.
+4. Copy `.env.example` to `.env` and set the variables below. Do not commit secrets.
+5. Apply `db/schema.sql` to Neon or confirm that the existing tables match the schema.
+6. Run `uvicorn backend.main:app --reload --port 8000`.
+7. Open http://localhost:8000.
 
-## Stack
+## Environment variables
+- `DATABASE_URL`: Neon PostgreSQL connection string with TLS enabled.
+- `ADMIN_USERNAME`: shared admin username.
+- `ADMIN_PASSWORD`: shared admin password.
+- `ADMIN_SESSION_SECRET`: random secret of at least 32 characters.
+- `APP_ORIGIN`: optional local CORS origin (default `http://localhost:8000`).
 
-- Next.js App Router, React, TypeScript
-- Neon Auth (Managed Better Auth)
-- Neon PostgreSQL
-- Vercel
-
-## Local development
-
-1. Install Node.js 22+.
-2. Install dependencies: `npm install`
-3. Copy `.env.example` to `.env.local`.
-4. Fill `DATABASE_URL`, `NEON_AUTH_BASE_URL`, and `NEON_AUTH_COOKIE_SECRET` using the dedicated Rulebook Neon project. Do not commit secrets.
-5. For the shared admin workspace, also set `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a long random `ADMIN_SESSION_SECRET` in `.env.local` and Vercel. Never expose these as `NEXT_PUBLIC_*` variables or commit their values.
-6. Start the app: `npm run dev`
-7. If using a fresh database, apply `db/schema.sql` to the `neondb` database.
-
-Useful checks:
-
-- `npm run typecheck`
-- `npm run lint`
-- `npm run build`
-
-## Shared administrator access
-
-Open `/admin`, sign in with the configured `ADMIN_USERNAME` and `ADMIN_PASSWORD`, search existing teacher profiles, or use **Add teacher** to create one. Select a teacher before creating or editing their policies. The add-teacher search only searches profiles already stored in Rulebook; it does not query an external institution directory. Keep the shared login restricted to trusted staff because actions are recorded under the selected teacher's name.
-
-## Teacher access
-
-Teacher access is intentionally provisioned by an administrator. First create the user identity in Neon Auth, then add an approved teacher profile with the exact Auth user ID:
-
-```sql
-INSERT INTO teachers (auth_user_id, display_name, email, approved)
-VALUES ('AUTH_USER_ID_FROM_NEON_AUTH', 'Teacher Display Name', 'teacher@college.edu', true);
+Generate a secret with:
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-Only an approved profile linked to the signed-in identity can manage policies. Never set `approved=true` from a public API request.
+## Deploy to Vercel
+1. Import this repository into Vercel and set the project root to the repository root.
+2. Add `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET` as server-side environment variables.
+3. Deploy using the Python runtime and the routing configuration in `vercel.json`.
+4. Verify `/health`, `/api/policies`, admin login, teacher management, and the complete policy-check flow. Do not assume deployment is working until these checks pass.
+5. If the Python runtime is unavailable or static assets are not included by the Vercel builder, host FastAPI on a Python-friendly host and configure the frontend/API origin accordingly.
 
-## Demonstration content
+## Safety and limitations
+The checker is a conservative deterministic evidence-matching baseline, **not an LLM or an official academic authority**. It should be evaluated against a reviewed test set before real use. Missing a prohibition is not evidence of permission; ambiguous or unsupported cases should be escalated to the instructor. Demo policies are fictional and must not be presented as official institutional rules.
 
-The initial three policies are **examples only**, not official institutional rules. Replace them with approved course policies before presenting the directory as authoritative.
-
-## Deployment
-
-The project is configured for Vercel and Neon. Set the Neon connection/auth variables and the three server-only admin variables in Vercel. Production email delivery and the correct trusted domain should be configured in Neon Auth before using real faculty accounts. See [Administrator setup](docs/ADMIN_SETUP.md) for details.
-
-## Security notes
-
-- No secrets belong in source control or browser-exposed environment variables.
-- Public policy queries return only `published` rows.
-- Every teacher mutation checks the session, approved teacher profile, and ownership in SQL.
-- Public registration does not grant teacher permissions.
+## Database
+The schema and fictional seed data are in `db/schema.sql`. For an existing database, review schema differences and do not blindly reset production data.

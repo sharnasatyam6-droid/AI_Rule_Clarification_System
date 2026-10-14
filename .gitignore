@@ -1,8 +1,14 @@
-node_modules/
-.next/
-out/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
 .env
 .env.*
 !.env.example
+.pytest_cache/
+.coverage
+.DS_Store
 .vercel/
+node_modules/
+.next/
 *.tsbuildinfo
