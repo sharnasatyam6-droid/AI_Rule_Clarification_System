@@ -1,15 +1,17 @@
 # Rulebook — AI Policy Hub
 
-Rulebook is a Vercel-friendly web application for students to discover clear, searchable course policies on AI use. Teachers with approved accounts can draft, publish, edit, and delete their own policies.
+Rulebook is a Vercel-friendly web application for students to discover clear, searchable course policies on AI use. The shared administrator workspace lets trusted staff search for a teacher, add a teacher profile, and create, publish, edit, or delete policies under that teacher's name. The original individual teacher sign-in remains available.
 
 ## Features
 
 - Public directory of published policies with teacher/title/subject search.
 - Filters for subject and AI permission category.
 - Policy detail pages with summaries, conditions, and update dates.
-- Managed Neon Auth sign-in for faculty.
-- Explicit teacher approval; public sign-up never grants faculty privileges.
-- Server-side create/read/update/delete routes with per-teacher ownership checks.
+- Shared admin sign-in using server-only environment variables and a signed, HTTP-only session cookie.
+- Searchable teacher directory and an Add Teacher workflow (searches records already entered; it is not connected to an external college directory).
+- Teacher selection before policy editing, with draft/published states.
+- Original managed Neon Auth sign-in for individual faculty.
+- Server-side authorization for all policy and teacher-management mutations.
 - PostgreSQL constraints and indexes, draft/published states, and demonstration seed data.
 - Responsive editorial-style UI and baseline security headers.
 - GitHub Actions checks for TypeScript, lint, and production build.
@@ -27,14 +29,19 @@ Rulebook is a Vercel-friendly web application for students to discover clear, se
 2. Install dependencies: `npm install`
 3. Copy `.env.example` to `.env.local`.
 4. Fill `DATABASE_URL`, `NEON_AUTH_BASE_URL`, and `NEON_AUTH_COOKIE_SECRET` using the dedicated Rulebook Neon project. Do not commit secrets.
-5. If using a fresh database, apply `db/schema.sql` to the `neondb` database.
+5. For the shared admin workspace, also set `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a long random `ADMIN_SESSION_SECRET` in `.env.local` and Vercel. Never expose these as `NEXT_PUBLIC_*` variables or commit their values.
 6. Start the app: `npm run dev`
+7. If using a fresh database, apply `db/schema.sql` to the `neondb` database.
 
 Useful checks:
 
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+
+## Shared administrator access
+
+Open `/admin`, sign in with the configured `ADMIN_USERNAME` and `ADMIN_PASSWORD`, search existing teacher profiles, or use **Add teacher** to create one. Select a teacher before creating or editing their policies. The add-teacher search only searches profiles already stored in Rulebook; it does not query an external institution directory. Keep the shared login restricted to trusted staff because actions are recorded under the selected teacher's name.
 
 ## Teacher access
 
@@ -53,7 +60,7 @@ The initial three policies are **examples only**, not official institutional rul
 
 ## Deployment
 
-The project is configured for Vercel and Neon. Set the three server-side environment variables in Vercel. Production email delivery and the correct trusted domain should be configured in Neon Auth before using real faculty accounts. See [Administrator setup](docs/ADMIN_SETUP.md) for details.
+The project is configured for Vercel and Neon. Set the Neon connection/auth variables and the three server-only admin variables in Vercel. Production email delivery and the correct trusted domain should be configured in Neon Auth before using real faculty accounts. See [Administrator setup](docs/ADMIN_SETUP.md) for details.
 
 ## Security notes
 
