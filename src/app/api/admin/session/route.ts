@@ -1,0 +1,4 @@
+import {adminConfigured,setAdminCookie,clearAdminCookie} from "@/lib/admin-session";
+export const dynamic="force-dynamic";
+export async function POST(request:Request){if(!adminConfigured())return Response.json({error:"Admin login is not configured. Set ADMIN_USERNAME, ADMIN_PASSWORD, and ADMIN_SESSION_SECRET in Vercel."},{status:503});try{const body=await request.json();const username=String(body.username||"");const password=String(body.password||"");const expectedUser=process.env.ADMIN_USERNAME||"",expectedPass=process.env.ADMIN_PASSWORD||"";if(username.length>160||password.length>500||username!==expectedUser||password!==expectedPass)return Response.json({error:"Incorrect admin ID or password."},{status:401});await setAdminCookie();return Response.json({ok:true})}catch{return Response.json({error:"Could not sign in."},{status:400})}}
+export async function DELETE(){await clearAdminCookie();return Response.json({ok:true})}
